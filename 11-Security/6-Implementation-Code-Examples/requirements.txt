@@ -1,0 +1,31 @@
+# AI Security — code examples dependencies
+#
+# The example scripts are intentionally DEPENDENCY-FREE (pure Python stdlib) so
+# they run anywhere without network access. The packages below are what you
+# would add to turn these illustrations into a production setup.
+#
+# Install (optional):  pip install -r requirements.txt
+
+# --- PII detection / redaction (upgrade pii_redaction.py from regex to NER) ---
+presidio-analyzer>=2.2          # Microsoft Presidio: NER-based PII detection
+presidio-anonymizer>=2.2        # redaction / anonymization operators
+spacy>=3.7                      # Presidio's default NLP backend (needs a model)
+
+# --- Guardrails frameworks (upgrade input_output_guardrails.py) ---
+guardrails-ai>=0.5              # validators + RAIL schema for I/O
+nemoguardrails>=0.11            # NVIDIA NeMo Guardrails (programmable rails)
+rebuff>=0.1                     # prompt-injection detection (heuristics+LLM+canary)
+
+# --- Schema validation for safe output handling ---
+pydantic>=2.6                   # strict schema validation of model output
+
+# --- Distributed rate limiting / budgets (upgrade rate_limit_budget.py) ---
+redis>=5.0                      # shared token-bucket store across instances
+
+# --- Red-teaming / scanning (upgrade prompt_injection_tests.py) ---
+# promptfoo is a Node CLI (npm i -g promptfoo); listed here as a reference.
+garak>=0.9                      # LLM vulnerability scanner (OWASP LLM Top 10)
+
+# --- Model provider SDKs (for wiring the stubs to a real model) ---
+openai>=1.30
+anthropic>=0.34
