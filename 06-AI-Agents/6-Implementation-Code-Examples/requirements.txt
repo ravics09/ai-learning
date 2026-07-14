@@ -1,0 +1,22 @@
+# AI Agents — example dependencies
+# Version floors reflect the 2025-2026 era (LangGraph 1.0 runtime, MCP GA).
+# Pin exact versions in real projects.
+
+# Core LLM client (used by most examples). Swap for your provider as needed.
+openai>=1.40.0
+
+# Typed tool arguments / structured output (why: validate args before executing).
+pydantic>=2.7.0
+
+# LangGraph multi-agent example (stateful graph + checkpointing).
+langgraph>=0.2.0
+langchain-core>=0.3.0
+langchain-openai>=0.2.0
+
+# MCP server example (Model Context Protocol Python SDK).
+mcp>=1.2.0
+
+# NOTE:
+# - react_agent_from_scratch.py and agent_memory.py run with only stdlib + a mock LLM,
+#   so you can study the mechanics WITHOUT any API key or network access.
+# - tool_calling_loop.py uses the OpenAI client but falls back to a mock if no key is set.
