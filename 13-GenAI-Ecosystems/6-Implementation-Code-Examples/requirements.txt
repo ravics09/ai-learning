@@ -1,0 +1,28 @@
+# GenAI Ecosystems — example dependencies
+# Install what you need per script; you don't need all of these at once.
+
+# --- Multi-provider gateway / SDK (multi_provider_litellm.py) ---
+litellm>=1.50.0
+
+# --- Local model via Ollama (run_local_model_ollama.py) ---
+# Ollama itself is a separate install: https://ollama.com/download
+ollama>=0.3.0
+
+# --- Image generation (image_generation.py) ---
+# Uses OpenAI Images API by default; diffusers path is optional/commented.
+openai>=1.40.0
+# Optional local diffusion (heavy — GPU recommended):
+# diffusers>=0.30.0
+# torch>=2.3.0
+# transformers>=4.44.0
+# accelerate>=0.33.0
+
+# --- Speech-to-text (whisper_transcription.py) ---
+# faster-whisper is a fast CTranslate2 implementation of Whisper (CPU/GPU).
+faster-whisper>=1.0.0
+
+# --- Embeddings comparison (embeddings_compare.py) ---
+sentence-transformers>=3.0.0
+numpy>=1.26.0
+# Optional API embeddings for the comparison (needs OPENAI_API_KEY):
+# openai>=1.40.0
