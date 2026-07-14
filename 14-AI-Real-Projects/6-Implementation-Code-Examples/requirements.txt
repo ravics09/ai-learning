@@ -1,0 +1,18 @@
+# Chat-with-your-PDF — minimal RAG starter
+# WHY these choices:
+# - openai: LLM + embeddings behind one simple API (swap for any provider).
+# - pypdf: pure-Python PDF text extraction, no system deps.
+# - faiss-cpu: fast local vector index; zero infra to run the demo.
+#   (In production you'd swap FAISS for pgvector/Pinecone/Qdrant — same interface.)
+# - numpy: vector math + persistence of the index metadata.
+# - tiktoken: accurate token counting so chunking respects real token budgets.
+# - streamlit: tiny UI so a reviewer can *run* it, not just read code.
+# - python-dotenv: load API keys from a .env file (never hard-code secrets).
+
+openai>=1.40.0
+pypdf>=4.2.0
+faiss-cpu>=1.8.0
+numpy>=1.26.0
+tiktoken>=0.7.0
+streamlit>=1.36.0
+python-dotenv>=1.0.1
