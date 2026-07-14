@@ -1,0 +1,15 @@
+# Python for AI Engineering — example dependencies
+# Pin ranges for reproducibility; a real project should use a lockfile (uv.lock / poetry.lock).
+
+fastapi>=0.115          # async web framework for serving models
+uvicorn[standard]>=0.30 # ASGI server to run FastAPI
+pydantic>=2.7           # runtime validation at the boundary (v2 core is Rust-fast)
+pydantic-settings>=2.3  # 12-factor config from env vars
+httpx>=0.27             # async HTTP client (used in async_concurrency.py)
+numpy>=1.26             # vectorization / broadcasting (profiling_optimization.py)
+
+# Optional but referenced in the learning material:
+# polars>=1.0           # fast, multi-threaded dataframes
+# py-spy                # sampling profiler for live processes
+# pytest>=8.0           # testing
+# pytest-asyncio>=0.23  # testing coroutines
