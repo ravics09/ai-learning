@@ -1,0 +1,5 @@
+# Minimal deps for the illustrative LLM gateway example.
+# capacity_cost_estimator.py needs nothing beyond the standard library.
+fastapi>=0.110
+uvicorn>=0.29
+pydantic>=2.6
