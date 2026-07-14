@@ -1,0 +1,13 @@
+# AI Evaluation examples — dependency floors (pin exact versions in real projects).
+# The LangChain 1.0 / eval-tooling era (2025-2026).
+
+openai>=1.40.0            # LLM-as-judge calls (Chat Completions, JSON mode)
+ragas>=0.2.0             # RAG metrics: faithfulness, answer/context relevance, context recall
+datasets>=2.19.0         # ragas evaluate() consumes a HF Dataset
+langchain>=0.3.0         # ragas uses langchain LLM/embeddings wrappers
+langchain-openai>=0.2.0  # OpenAI judge + embeddings for ragas
+scipy>=1.11.0            # two-proportion z-test / statistics for A/B analysis
+numpy>=1.26.0            # numeric helpers
+
+# promptfoo is a Node.js CLI, installed separately (not via pip):
+#   npm install -g promptfoo   # or:  npx promptfoo@latest eval -c promptfoo_config.yaml
