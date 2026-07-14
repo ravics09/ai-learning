@@ -1,0 +1,25 @@
+# AI Frameworks — code example dependencies
+# Pin in real projects; these floors reflect the 2025-2026 (LangChain 1.0 era) stack.
+
+# LangChain + LCEL + LangGraph
+langchain>=1.0.0
+langchain-openai>=0.2.0
+langchain-core>=0.3.0
+langgraph>=0.2.0
+
+# LlamaIndex (data / RAG framework)
+llama-index>=0.11.0
+
+# DSPy (programming, not prompting)
+dspy-ai>=2.5.0
+
+# Structured output
+instructor>=1.5.0
+pydantic>=2.7.0
+
+# Provider SDK (used directly by Instructor example)
+openai>=1.40.0
+
+# Notes:
+# - Set OPENAI_API_KEY in your environment before running any example.
+# - These scripts are illustrative; run one at a time.
