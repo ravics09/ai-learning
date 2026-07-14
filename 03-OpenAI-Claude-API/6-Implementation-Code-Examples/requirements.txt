@@ -1,0 +1,12 @@
+# LLM provider SDKs
+openai>=1.40.0
+anthropic>=0.34.0
+
+# Data validation for structured outputs
+pydantic>=2.7.0
+
+# Token counting (OpenAI tokenizer)
+tiktoken>=0.7.0
+
+# Optional: load API keys from a .env file
+python-dotenv>=1.0.0
