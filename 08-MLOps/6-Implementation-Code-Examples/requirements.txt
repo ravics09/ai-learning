@@ -1,0 +1,16 @@
+# Core MLOps
+mlflow>=2.16.0
+scikit-learn>=1.5.0
+numpy>=1.26.0
+pandas>=2.2.0
+scipy>=1.13.0          # KS test for drift detection
+
+# Serving
+fastapi>=0.115.0
+uvicorn>=0.30.0
+pydantic>=2.8.0
+prometheus-client>=0.20.0
+
+# LLMOps
+langfuse>=2.50.0
+openai>=1.40.0

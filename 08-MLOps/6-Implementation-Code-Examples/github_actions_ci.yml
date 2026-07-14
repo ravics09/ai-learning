@@ -1,0 +1,80 @@
+# github_actions_ci.yml
+# ======================
+# CI/CD for ML. Copy into .github/workflows/ to activate.
+#
+# WHY THIS IS DIFFERENT FROM NORMAL CI:
+# Normal CI tests code. ML CI adds two things:
+#   1) DATA VALIDATION   - bad data in => bad model out, so validate first.
+#   2) AN EVALUATION GATE - block the deploy if the model regresses on a
+#                           versioned "golden" evaluation set.
+# The deploy job only runs if the eval gate passes.
+
+name: ml-ci-cd
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  test-and-evaluate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        run: pip install -r requirements.txt
+
+      # WHY: standard software correctness before we spend money training.
+      - name: Unit tests
+        run: pytest -q || echo "add tests"
+
+      # WHY: catch schema drift / null spikes / range violations BEFORE training.
+      - name: Data validation
+        run: python -c "print('validate schema, nulls, ranges vs baseline here')"
+
+      # WHY: produce the metrics we will gate on (writes metrics.json).
+      - name: Evaluate on golden set
+        run: |
+          python - <<'PY'
+          import json
+          # Replace with real evaluation over your versioned golden dataset.
+          metrics = {"f1": 0.86, "faithfulness": 0.88, "schema_valid": 1.0}
+          json.dump(metrics, open("metrics.json", "w"))
+          print("wrote metrics.json:", metrics)
+          PY
+
+      # WHY: THE GATE. Hard-fail the build on a regression so a worse model can
+      # never reach production. Deterministic checks (schema) are hard gates;
+      # quality metrics are compared to thresholds.
+      - name: Quality gate
+        run: |
+          F1=$(jq '.f1' metrics.json)
+          SCHEMA=$(jq '.schema_valid' metrics.json)
+          F1_MIN=0.82
+          echo "f1=$F1 (min $F1_MIN), schema_valid=$SCHEMA"
+          # Hard gate: structured output MUST be valid.
+          awk "BEGIN{exit !($SCHEMA == 1.0)}" || { echo "FAIL: invalid schema"; exit 1; }
+          # Soft-ish gate: quality must clear the bar.
+          awk "BEGIN{exit !($F1 >= $F1_MIN)}" || { echo "FAIL: f1 regression"; exit 1; }
+          echo "Quality gate passed."
+
+  deploy-canary:
+    needs: test-and-evaluate          # WHY: only deploy if the gate passed.
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # WHY: pin/deploy by immutable image DIGEST, never a mutable tag, so
+      # rollback is deterministic.
+      - name: Build & push image
+        run: echo "docker build + push registry/model:${{ github.sha }}"
+      - name: Deploy canary (5%)
+        run: echo "shift 5% traffic to new version; monitor SLOs + online evals"
+      - name: Promote or rollback
+        run: echo "promote to 100% if healthy; else rollback to previous digest"
