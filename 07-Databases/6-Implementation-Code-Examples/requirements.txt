@@ -1,0 +1,12 @@
+# Databases for AI Engineering — example dependencies
+# Install:  pip install -r requirements.txt
+# (A running PostgreSQL 16+ with the `vector` extension and a Redis 7+ server are also needed.)
+
+psycopg[binary]>=3.1        # modern PostgreSQL driver (parameterized queries, pipeline mode)
+pgvector>=0.3.0             # Python adapter for the pgvector `vector` type
+redis>=5.0                  # Redis client (used for semantic caching)
+numpy>=1.26                 # vector math for the demo embeddings / cosine similarity
+
+# Optional — only if you swap the fake embedder for a real model:
+# openai>=1.40              # real embeddings via OpenAI
+# sentence-transformers>=3  # local embeddings, no API key needed
