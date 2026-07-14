@@ -1,0 +1,15 @@
+# Cloud for AI — Implementation examples (Python deps)
+# Only the Python examples need these. The .tf and .yaml files use terraform/kubectl.
+# Version floors are illustrative; pin exact versions in real projects.
+
+# --- bedrock_invoke.py ---
+boto3>=1.35.0            # AWS SDK: Bedrock runtime (converse / converse_stream) + Secrets Manager
+
+# --- sagemaker_or_vertex_deploy.py (choose your cloud) ---
+sagemaker>=2.230.0       # AWS SageMaker Python SDK (deploy custom models to endpoints)
+google-cloud-aiplatform>=1.70.0   # GCP Vertex AI SDK (upload model, deploy endpoint)
+
+# Tooling used by the non-Python files (install separately, not via pip):
+#   terraform >= 1.9      # terraform_gpu_infra.tf
+#   kubectl / helm        # k8s_llm_deployment.yaml, autoscaling_config.yaml
+#   KEDA (in-cluster)     # required for autoscaling_config.yaml Option A

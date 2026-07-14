@@ -1,0 +1,71 @@
+# autoscaling_config.yaml
+# =============================================================================
+# Autoscale the LLM deployment on the RIGHT signal.
+#
+# WHY this file exists (the #1 LLM-serving interview point):
+#   CPU% is a BAD scaling signal for GPU inference — a GPU can be maxed out while CPU
+#   looks idle. Scale on SERVING metrics instead: queue depth, GPU utilization, or
+#   requests waiting. Here we show KEDA scaling on a Prometheus metric (vLLM queue),
+#   plus a plain HPA fallback for reference.
+#
+# Two layers of autoscaling:
+#   - PODS: KEDA/HPA (this file) reacts to load and can scale to zero.
+#   - NODES: Karpenter/Cluster Autoscaler (infra) adds GPU machines when pods can't fit.
+# -----------------------------------------------------------------------------
+
+# --- Option A (recommended): KEDA ScaledObject on a real serving metric ------
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: llm-vllm-scaler
+spec:
+  scaleTargetRef:
+    name: llm-vllm # the Deployment from k8s_llm_deployment.yaml
+  minReplicaCount: 1 # set to 0 for scale-to-zero (accept cold starts on first hit)
+  maxReplicaCount: 10
+  cooldownPeriod: 120 # WHY: avoid thrashing; GPU pods are slow to start, so scale calmly
+  triggers:
+    - type: prometheus
+      metadata:
+        serverAddress: http://prometheus.monitoring.svc:9090
+        # WHY this metric: vLLM exposes the number of requests waiting in its queue.
+        # Rising queue = we are behind and need more replicas — a LEADING signal, unlike
+        # CPU which lags. Threshold "5" means: aim for <=5 queued requests per replica.
+        metricName: vllm_num_requests_waiting
+        query: sum(vllm:num_requests_waiting)
+        threshold: "5"
+---
+# --- Option B (fallback): native HPA on a custom GPU metric ------------------
+# Use when you don't run KEDA. Requires a metrics adapter exposing GPU utilization
+# (e.g., DCGM exporter -> custom.metrics.k8s.io). Still NOT plain CPU%.
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: llm-vllm-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: llm-vllm
+  minReplicas: 1
+  maxReplicas: 10
+  metrics:
+    - type: Pods
+      pods:
+        metric:
+          name: gpu_utilization # from DCGM exporter; target average across pods
+        target:
+          type: AverageValue
+          averageValue: "70" # keep GPUs busy (~70%) without tipping into latency cliffs
+  behavior:
+    scaleDown:
+      # WHY slow scale-down: GPU pods are expensive to restart; don't yo-yo. Wait before
+      # removing capacity so a brief dip doesn't kill a replica we need again in seconds.
+      stabilizationWindowSeconds: 300
+    scaleUp:
+      # Scale UP fast: users feel latency immediately, so react quickly to load spikes.
+      stabilizationWindowSeconds: 0
+      policies:
+        - type: Percent
+          value: 100 # can double replicas per step
+          periodSeconds: 30

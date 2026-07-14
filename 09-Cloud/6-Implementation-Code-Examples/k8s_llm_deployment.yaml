@@ -1,0 +1,91 @@
+# k8s_llm_deployment.yaml
+# =============================================================================
+# Deploy an LLM with vLLM on a Kubernetes GPU node, exposed as a Service.
+#
+# WHY this file exists (interview points):
+#   - Request a GPU the right way: resources.limits: nvidia.com/gpu
+#   - Land ONLY on GPU nodes via nodeSelector + tolerations (they were tainted in TF)
+#   - Use vLLM for continuous batching / PagedAttention (biggest throughput win)
+#   - Pull the model weights + a HF token from a SECRET (never bake creds into the image)
+#   - Probes so K8s only sends traffic to a pod that has finished loading the model
+#
+# Autoscaling for this deployment lives in autoscaling_config.yaml (KEDA on queue depth).
+# -----------------------------------------------------------------------------
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: llm-vllm
+  labels: { app: llm-vllm }
+spec:
+  replicas: 2 # baseline; the autoscaler adjusts this under load
+  selector:
+    matchLabels: { app: llm-vllm }
+  template:
+    metadata:
+      labels: { app: llm-vllm }
+    spec:
+      # WHY nodeSelector + toleration: GPU nodes were TAINTED so random CPU pods don't
+      # squat on expensive GPUs. Only pods that tolerate the taint land here.
+      nodeSelector:
+        workload: gpu-inference
+      tolerations:
+        - key: "nvidia.com/gpu"
+          operator: "Exists"
+          effect: "NoSchedule"
+      containers:
+        - name: vllm
+          image: vllm/vllm-openai:latest # exposes an OpenAI-compatible API
+          args:
+            - "--model=meta-llama/Meta-Llama-3-8B-Instruct"
+            - "--max-model-len=8192"
+            - "--gpu-memory-utilization=0.90" # pack the GPU; leave headroom for KV cache
+          ports:
+            - containerPort: 8000
+          env:
+            # WHY from secret: the HF token is a credential -> pulled from a K8s Secret
+            # (ideally synced from a cloud secrets manager via External Secrets Operator),
+            # never hardcoded in the image or manifest.
+            - name: HUGGING_FACE_HUB_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: hf-token
+                  key: token
+          resources:
+            limits:
+              nvidia.com/gpu: 1 # <-- the line that actually reserves a GPU
+            requests:
+              cpu: "4"
+              memory: 24Gi
+          # WHY readiness gate: loading an 8B model takes time. Until /health is OK, the
+          # Service must NOT route traffic here, or users hit errors during startup.
+          readinessProbe:
+            httpGet: { path: /health, port: 8000 }
+            initialDelaySeconds: 60
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /health, port: 8000 }
+            initialDelaySeconds: 120
+            periodSeconds: 20
+      # Speeds re-scheduling on spot reclaim; keep short so drained pods free GPUs fast.
+      terminationGracePeriodSeconds: 30
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: llm-vllm
+spec:
+  selector: { app: llm-vllm }
+  ports:
+    - port: 80
+      targetPort: 8000
+  type: ClusterIP # front with an Ingress/Gateway that adds auth + rate limiting
+---
+# Protect availability during node churn (spot reclaim, upgrades): keep at least 1 pod up.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: llm-vllm-pdb
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels: { app: llm-vllm }
