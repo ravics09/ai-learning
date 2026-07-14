@@ -1,0 +1,18 @@
+# Vector DB code examples — dependency floors (pin exact versions in real projects).
+# Most examples use numpy only so they run anywhere with no services.
+
+numpy>=1.26
+
+# embeddings_similarity.py (optional: real embeddings). Falls back to random vectors
+# if not installed, so the example still runs.
+sentence-transformers>=3.0
+
+# hnsw_index_faiss.py, hybrid_search_rrf.py (dense side), metadata_filtering.py
+faiss-cpu>=1.8.0
+
+# hybrid_search_rrf.py (sparse side) — lightweight BM25 implementation
+rank-bm25>=0.2.2
+
+# qdrant_or_chroma_crud.py — pick ONE; both shown in the file with graceful fallback.
+qdrant-client>=1.10
+chromadb>=0.5
